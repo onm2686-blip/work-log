@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>个人任务管理器</title>
+    <title>工作任务管理</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
     <style>
@@ -71,11 +71,33 @@
             color: #2c3e50;
             display: flex;
             align-items: center;
+            justify-content: space-between;
+        }
+        
+        .module-title-text {
+            display: flex;
+            align-items: center;
             gap: 10px;
         }
         
         .module-title i {
             color: #3498db;
+        }
+        
+        .clear-all-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.3s;
+            white-space: nowrap;
+        }
+        
+        .clear-all-btn:hover {
+            background-color: #c0392b;
         }
         
         .input-area {
@@ -101,6 +123,7 @@
             height: 80px;
             resize: vertical;
             font-family: inherit;
+            white-space: pre-wrap; /* 保留换行符 */
         }
         
         button {
@@ -127,9 +150,9 @@
             margin-bottom: 15px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
             box-shadow: 0 5px 10px rgba(0, 0, 0, 0.05);
             transition: all 0.3s;
+            position: relative;
         }
         
         .task-item:hover, .log-item:hover {
@@ -139,19 +162,27 @@
         .task-content {
             flex: 1;
             display: flex;
-            align-items: center;
-            gap: 15px;
+            align-items: flex-start; /* 改为顶部对齐 */
+            gap: 12px; /* 缩小间距 */
+            min-width: 0; /* 防止内容溢出 */
+            padding-right: 90px; /* 为删除按钮预留空间 */
         }
         
         .task-checkbox {
             width: 22px;
             height: 22px;
             cursor: pointer;
+            flex-shrink: 0;
+            margin-top: 2px; /* 微调垂直位置 */
         }
         
         .task-text {
             font-size: 1.1rem;
             flex: 1;
+            word-break: break-word;
+            cursor: pointer;
+            line-height: 1.4;
+            max-width: 100%; /* 确保不会超出容器 */
         }
         
         .completed {
@@ -167,11 +198,51 @@
             padding: 8px 15px;
             cursor: pointer;
             font-size: 0.9rem;
-            transition: background-color 0.3s;
+            transition: all 0.3s;
+            flex-shrink: 0;
+            width: auto; /* 改为自适应宽度 */
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap; /* 防止文字换行 */
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
         }
         
+        /* 修改悬停效果：只轻微上浮，不需要上下移动 */
         .delete-btn:hover {
             background-color: #c0392b;
+            transform: translateY(calc(-50% - 2px));
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .task-category {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-right: 10px;
+            flex-shrink: 0;
+            margin-top: 2px; /* 微调垂直位置 */
+        }
+        
+        .category-work {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .category-life {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .category-study {
+            background-color: #9b59b6;
+            color: white;
         }
         
         .log-date {
@@ -179,6 +250,7 @@
             color: #e74c3c;
             margin-bottom: 3px;
             font-size: 0.95rem;
+            cursor: pointer;
         }
         
         .time-period {
@@ -186,11 +258,16 @@
             color: #3498db;
             margin-bottom: 5px;
             font-size: 1.1rem;
+            cursor: pointer;
         }
         
         .log-content {
             color: #555;
             line-height: 1.5;
+            word-break: break-word;
+            white-space: pre-wrap; /* 保留换行符 */
+            flex: 1;
+            padding-right: 90px; /* 为删除按钮预留空间 */
         }
         
         .data-controls {
@@ -216,6 +293,7 @@
         
         .export-btn:hover {
             background: linear-gradient(to right, #8e44ad, #c0392b);
+            transform: scale(1.03);
         }
         
         .import-btn {
@@ -224,6 +302,7 @@
         
         .import-btn:hover {
             background: linear-gradient(to right, #27ae60, #2980b9);
+            transform: scale(1.03);
         }
         
         .signature {
@@ -231,12 +310,12 @@
             bottom: 20px;
             right: 20px;
             color: rgba(255, 255, 255, 0.8);
-            font-size: 0.9rem; /* 缩小字号 */
+            font-size: 0.9rem;
             font-style: italic;
             padding: 8px 15px;
             background-color: rgba(0, 0, 0, 0.2);
             border-radius: 10px;
-            font-family: inherit; /* 使用默认字体 */
+            font-family: inherit;
         }
         
         .empty-state {
@@ -264,6 +343,36 @@
             
             h1 {
                 font-size: 2.2rem;
+            }
+            
+            .module-title {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .clear-all-btn {
+                align-self: flex-end;
+            }
+            
+            .log-content {
+                padding-right: 80px;
+            }
+            
+            .delete-btn {
+                right: 10px;
+                padding: 6px 12px;
+                font-size: 0.85rem;
+            }
+            
+            .task-content {
+                padding-right: 80px;
+                gap: 10px;
+            }
+            
+            .task-checkbox {
+                width: 20px;
+                height: 20px;
             }
         }
         
@@ -325,6 +434,7 @@
             margin-top: 10px;
             padding-top: 10px;
             border-top: 1px dashed #ddd;
+            cursor: pointer;
         }
         
         .import-note {
@@ -333,6 +443,161 @@
             text-align: center;
             margin-top: 10px;
             font-style: italic;
+        }
+        
+        .category-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .category-option {
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+            background-color: #f0f0f0;
+            color: #555;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .category-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .category-option.active {
+            font-weight: bold;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+        }
+        
+        .category-option.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.2);
+            z-index: 1;
+        }
+        
+        .category-option.category-work.active {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+        
+        .category-option.category-life.active {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+        }
+        
+        .category-option.category-study.active {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: white;
+        }
+        
+        .edit-input {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #3498db;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        
+        .edit-textarea {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #3498db;
+            border-radius: 6px;
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 80px;
+            font-family: inherit;
+        }
+        
+        .edit-select {
+            padding: 8px;
+            border: 2px solid #3498db;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        
+        .save-edit-btn {
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-right: 5px;
+            transition: all 0.3s;
+        }
+        
+        .save-edit-btn:hover {
+            background-color: #27ae60;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .cancel-edit-btn {
+            background-color: #95a5a6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        
+        .cancel-edit-btn:hover {
+            background-color: #7f8c8d;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .edit-controls {
+            display: flex;
+            margin-top: 10px;
+        }
+        
+        .log-work {
+            cursor: pointer;
+        }
+        
+        .editing-mode {
+            background-color: #fff9e6;
+            border: 2px solid #f1c40f;
+        }
+        
+        .log-item-inner {
+            display: flex;
+            width: 100%;
+            position: relative;
+        }
+        
+        .log-content-wrapper {
+            flex: 1;
+            padding-right: 90px;
+        }
+        
+        .task-text-wrapper {
+            flex: 1;
+            min-width: 0; /* 确保文本容器可以缩小 */
+        }
+        
+        .task-left-section {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px; /* 减小左侧元素的间距 */
+            flex-shrink: 0;
         }
     </style>
 </head>
@@ -346,9 +611,19 @@
         <div class="main-content">
             <!-- 模块一：任务管理 -->
             <section class="module">
-                <div class="module-header">
-                    <h2 class="module-title"><i class="fas fa-list-check"></i> 今日任务</h2>
-                    <div class="task-count" id="taskCount">0 个任务</div>
+                <div class="module-title">
+                    <div class="module-title-text">
+                        <i class="fas fa-list-check"></i> 今日任务
+                    </div>
+                    <button class="clear-all-btn" id="clearTasksBtn">
+                        <i class="fas fa-trash"></i> 清除全部
+                    </button>
+                </div>
+                
+                <div class="category-selector" id="categorySelector">
+                    <div class="category-option category-work active" data-category="work">工作</div>
+                    <div class="category-option category-life" data-category="life">生活</div>
+                    <div class="category-option category-study" data-category="study">学习</div>
                 </div>
                 
                 <div class="input-area">
@@ -364,9 +639,13 @@
             
             <!-- 模块二：时间记录 -->
             <section class="module">
-                <div class="module-header">
-                    <h2 class="module-title"><i class="fas fa-clock"></i> 工作时间记录</h2>
-                    <div class="log-count" id="logCount">0 条记录</div>
+                <div class="module-title">
+                    <div class="module-title-text">
+                        <i class="fas fa-clock"></i> 工作时间记录
+                    </div>
+                    <button class="clear-all-btn" id="clearLogsBtn">
+                        <i class="fas fa-trash"></i> 清除全部
+                    </button>
                 </div>
                 
                 <div class="time-inputs">
@@ -408,7 +687,7 @@
         const taskInput = document.getElementById('taskInput');
         const addTaskBtn = document.getElementById('addTaskBtn');
         const taskList = document.getElementById('taskList');
-        const taskCount = document.getElementById('taskCount');
+        const categorySelector = document.getElementById('categorySelector');
         
         const logDate = document.getElementById('logDate');
         const timePeriod = document.getElementById('timePeriod');
@@ -416,15 +695,19 @@
         const logInput = document.getElementById('logInput');
         const addLogBtn = document.getElementById('addLogBtn');
         const logList = document.getElementById('logList');
-        const logCount = document.getElementById('logCount');
         
         const exportBtn = document.getElementById('exportBtn');
         const importBtn = document.getElementById('importBtn');
         const importFile = document.getElementById('importFile');
+        const clearTasksBtn = document.getElementById('clearTasksBtn');
+        const clearLogsBtn = document.getElementById('clearLogsBtn');
         
         // 从本地存储加载数据
         let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
         let timeLogs = JSON.parse(localStorage.getItem('timeLogs')) || [];
+        
+        // 当前选中的分类
+        let selectedCategory = 'work';
         
         // 设置日期输入框的默认值为今天
         function setDefaultDate() {
@@ -458,9 +741,26 @@
             importBtn.addEventListener('click', () => importFile.click());
             importFile.addEventListener('change', importFromExcel);
             
+            // 清除按钮事件
+            clearTasksBtn.addEventListener('click', clearAllTasks);
+            clearLogsBtn.addEventListener('click', clearAllLogs);
+            
             // 监听日期变化，如果为空则重置为今天
             logDate.addEventListener('change', function() {
                 if (!this.value) setDefaultDate();
+            });
+            
+            // 分类选择器事件
+            categorySelector.querySelectorAll('.category-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    // 移除所有active类
+                    categorySelector.querySelectorAll('.category-option').forEach(opt => {
+                        opt.classList.remove('active');
+                    });
+                    // 为当前选项添加active类
+                    this.classList.add('active');
+                    selectedCategory = this.getAttribute('data-category');
+                });
             });
         });
         
@@ -475,6 +775,7 @@
             const newTask = {
                 id: Date.now(),
                 text: text,
+                category: selectedCategory,
                 completed: false,
                 createdAt: new Date().toISOString()
             };
@@ -491,7 +792,7 @@
             const date = logDate.value;
             const period = timePeriod.value.trim();
             const content = workContent.value.trim();
-            const details = logInput.value.trim();
+            const details = logInput.value; // 保留换行符，不trim
             
             if (!date || !period || !content) {
                 alert('请填写日期、时间段和工作内容');
@@ -533,7 +834,6 @@
         function renderTasks() {
             if (tasks.length === 0) {
                 taskList.innerHTML = '<div class="empty-state">暂无任务，添加你的第一个任务吧！</div>';
-                taskCount.textContent = '0 个任务';
                 return;
             }
             
@@ -546,9 +846,14 @@
             sortedTasks.forEach(task => {
                 const taskItem = document.createElement('div');
                 taskItem.className = 'task-item';
+                taskItem.setAttribute('data-id', task.id);
                 
                 const taskContent = document.createElement('div');
                 taskContent.className = 'task-content';
+                
+                // 左侧部分：复选框和分类标签
+                const leftSection = document.createElement('div');
+                leftSection.className = 'task-left-section';
                 
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
@@ -556,32 +861,56 @@
                 checkbox.checked = task.completed;
                 checkbox.addEventListener('change', () => toggleTask(task.id));
                 
+                const categorySpan = document.createElement('span');
+                categorySpan.className = `task-category category-${task.category}`;
+                categorySpan.textContent = getCategoryName(task.category);
+                
+                leftSection.appendChild(checkbox);
+                leftSection.appendChild(categorySpan);
+                
+                // 任务文本部分
+                const textWrapper = document.createElement('div');
+                textWrapper.className = 'task-text-wrapper';
+                
                 const taskText = document.createElement('span');
                 taskText.className = `task-text ${task.completed ? 'completed' : ''}`;
                 taskText.textContent = task.text;
+                taskText.setAttribute('data-id', task.id);
                 
+                textWrapper.appendChild(taskText);
+                
+                // 组装任务内容区域
+                taskContent.appendChild(leftSection);
+                taskContent.appendChild(textWrapper);
+                
+                // 删除按钮
                 const deleteBtn = document.createElement('button');
                 deleteBtn.className = 'delete-btn';
                 deleteBtn.innerHTML = '<i class="fas fa-trash"></i> 删除';
-                deleteBtn.addEventListener('click', () => deleteTask(task.id));
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation(); // 防止事件冒泡
+                    deleteTask(task.id);
+                });
                 
-                taskContent.appendChild(checkbox);
-                taskContent.appendChild(taskText);
                 taskItem.appendChild(taskContent);
                 taskItem.appendChild(deleteBtn);
                 taskList.appendChild(taskItem);
                 
+                // 添加双击编辑事件
+                taskItem.addEventListener('dblclick', (e) => {
+                    if (e.target !== checkbox && e.target !== deleteBtn && e.target !== deleteBtn.querySelector('i')) {
+                        editTask(task.id);
+                    }
+                });
+                
                 if (task.completed) completedCount++;
             });
-            
-            taskCount.textContent = `${completedCount}/${tasks.length} 个任务完成`;
         }
         
         // 渲染时间记录
         function renderLogs() {
             if (timeLogs.length === 0) {
                 logList.innerHTML = '<div class="empty-state">暂无时间记录，开始记录你的工作时间吧！</div>';
-                logCount.textContent = '0 条记录';
                 return;
             }
             
@@ -600,6 +929,7 @@
             sortedLogs.forEach(log => {
                 const logItem = document.createElement('div');
                 logItem.className = 'log-item';
+                logItem.setAttribute('data-id', log.id);
                 
                 const logContent = document.createElement('div');
                 logContent.className = 'log-content';
@@ -613,10 +943,12 @@
                 const date = document.createElement('div');
                 date.className = 'log-date';
                 date.innerHTML = `<i class="far fa-calendar"></i> ${log.formattedDate || log.date}`;
+                date.setAttribute('data-id', log.id);
                 
                 const period = document.createElement('div');
                 period.className = 'time-period';
                 period.innerHTML = `<i class="far fa-clock"></i> ${log.period}`;
+                period.setAttribute('data-id', log.id);
                 
                 datePeriod.appendChild(date);
                 datePeriod.appendChild(period);
@@ -624,6 +956,7 @@
                 const work = document.createElement('div');
                 work.className = 'log-work';
                 work.textContent = log.content;
+                work.setAttribute('data-id', log.id);
                 
                 datePeriod.appendChild(period);
                 logHeader.appendChild(datePeriod);
@@ -634,20 +967,43 @@
                     const details = document.createElement('div');
                     details.className = 'log-details';
                     details.textContent = log.details;
+                    details.setAttribute('data-id', log.id);
                     logContent.appendChild(details);
                 }
                 
                 const deleteBtn = document.createElement('button');
                 deleteBtn.className = 'delete-btn';
                 deleteBtn.innerHTML = '<i class="fas fa-trash"></i> 删除';
-                deleteBtn.addEventListener('click', () => deleteLog(log.id));
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation(); // 防止事件冒泡
+                    deleteLog(log.id);
+                });
                 
                 logItem.appendChild(logContent);
                 logItem.appendChild(deleteBtn);
                 logList.appendChild(logItem);
+                
+                // 添加双击编辑事件到整个日志项
+                logItem.addEventListener('dblclick', (e) => {
+                    if (e.target !== deleteBtn && e.target !== deleteBtn.querySelector('i')) {
+                        const target = e.target;
+                        const logId = log.id;
+                        
+                        if (target.classList.contains('log-date')) {
+                            editLogDate(logId);
+                        } else if (target.classList.contains('time-period')) {
+                            editLogPeriod(logId);
+                        } else if (target.classList.contains('log-work')) {
+                            editLogContent(logId);
+                        } else if (target.classList.contains('log-details')) {
+                            editLogDetails(logId);
+                        } else {
+                            // 如果点击的是其他部分，默认编辑工作内容
+                            editLogContent(logId);
+                        }
+                    }
+                });
             });
-            
-            logCount.textContent = `${timeLogs.length} 条记录`;
         }
         
         // 切换任务完成状态
@@ -681,6 +1037,500 @@
             }
         }
         
+        // 编辑任务
+        function editTask(id) {
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+            
+            const taskItem = document.querySelector(`.task-item[data-id="${id}"]`);
+            if (!taskItem) return;
+            
+            // 保存原始内容
+            const originalText = task.text;
+            const originalCategory = task.category;
+            
+            // 标记为编辑模式
+            taskItem.classList.add('editing-mode');
+            
+            // 获取当前显示的内容
+            const taskText = taskItem.querySelector('.task-text');
+            const categorySpan = taskItem.querySelector('.task-category');
+            const deleteBtn = taskItem.querySelector('.delete-btn');
+            
+            // 保存原始HTML
+            const originalTaskContent = taskItem.querySelector('.task-content').innerHTML;
+            
+            // 创建编辑界面
+            const editContainer = document.createElement('div');
+            editContainer.style.width = '100%';
+            editContainer.style.padding = '10px';
+            
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'edit-input';
+            input.value = task.text;
+            input.style.marginBottom = '10px';
+            input.style.width = '100%';
+            
+            const categorySelect = document.createElement('select');
+            categorySelect.className = 'edit-select';
+            categorySelect.style.width = '100%';
+            categorySelect.style.marginBottom = '10px';
+            
+            const categories = [
+                { value: 'work', name: '工作' },
+                { value: 'life', name: '生活' },
+                { value: 'study', name: '学习' }
+            ];
+            
+            categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.value;
+                option.textContent = cat.name;
+                if (cat.value === task.category) option.selected = true;
+                categorySelect.appendChild(option);
+            });
+            
+            const editControls = document.createElement('div');
+            editControls.className = 'edit-controls';
+            editControls.style.justifyContent = 'flex-end';
+            
+            const saveBtn = document.createElement('button');
+            saveBtn.className = 'save-edit-btn';
+            saveBtn.textContent = '保存';
+            saveBtn.addEventListener('click', () => {
+                const newText = input.value.trim();
+                if (!newText) {
+                    alert('任务内容不能为空');
+                    return;
+                }
+                
+                tasks = tasks.map(t => {
+                    if (t.id === id) {
+                        return { ...t, text: newText, category: categorySelect.value };
+                    }
+                    return t;
+                });
+                
+                saveTasks();
+                renderTasks();
+            });
+            
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'cancel-edit-btn';
+            cancelBtn.textContent = '取消';
+            cancelBtn.addEventListener('click', () => {
+                // 恢复原始数据
+                tasks = tasks.map(t => {
+                    if (t.id === id) {
+                        return { ...t, text: originalText, category: originalCategory };
+                    }
+                    return t;
+                });
+                
+                saveTasks();
+                renderTasks();
+            });
+            
+            editControls.appendChild(saveBtn);
+            editControls.appendChild(cancelBtn);
+            
+            editContainer.appendChild(input);
+            editContainer.appendChild(categorySelect);
+            editContainer.appendChild(editControls);
+            
+            // 替换任务内容为编辑框
+            taskItem.innerHTML = '';
+            taskItem.appendChild(editContainer);
+            
+            // 焦点设置到输入框
+            input.focus();
+            input.select();
+            
+            // 添加键盘事件
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    saveBtn.click();
+                }
+            });
+        }
+        
+        // 编辑时间记录日期
+        function editLogDate(id) {
+            const log = timeLogs.find(l => l.id === id);
+            if (!log) return;
+            
+            const logItem = document.querySelector(`.log-item[data-id="${id}"]`);
+            if (!logItem) return;
+            
+            // 保存原始数据
+            const originalDate = log.date;
+            const originalFormattedDate = log.formattedDate;
+            
+            // 标记为编辑模式
+            logItem.classList.add('editing-mode');
+            
+            // 创建编辑界面
+            const dateElement = logItem.querySelector('.log-date');
+            const originalHTML = dateElement.innerHTML;
+            
+            const input = document.createElement('input');
+            input.type = 'date';
+            input.className = 'edit-input';
+            input.value = log.date;
+            input.style.width = '150px';
+            
+            const editControls = document.createElement('div');
+            editControls.className = 'edit-controls';
+            editControls.style.marginTop = '5px';
+            
+            const saveBtn = document.createElement('button');
+            saveBtn.className = 'save-edit-btn';
+            saveBtn.textContent = '保存';
+            saveBtn.style.padding = '5px 10px';
+            saveBtn.style.fontSize = '0.8rem';
+            
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'cancel-edit-btn';
+            cancelBtn.textContent = '取消';
+            cancelBtn.style.padding = '5px 10px';
+            cancelBtn.style.fontSize = '0.8rem';
+            
+            editControls.appendChild(saveBtn);
+            editControls.appendChild(cancelBtn);
+            
+            dateElement.innerHTML = '';
+            dateElement.appendChild(input);
+            dateElement.appendChild(editControls);
+            
+            input.focus();
+            
+            const handleSave = () => {
+                const newDate = input.value;
+                if (!newDate) {
+                    alert('日期不能为空');
+                    return;
+                }
+                
+                // 格式化新日期
+                const dateObj = new Date(newDate);
+                const formattedDate = dateObj.toLocaleDateString('zh-CN', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric',
+                    weekday: 'short'
+                });
+                
+                timeLogs = timeLogs.map(l => {
+                    if (l.id === id) {
+                        return { ...l, date: newDate, formattedDate: formattedDate };
+                    }
+                    return l;
+                });
+                
+                saveLogs();
+                renderLogs();
+            };
+            
+            const handleCancel = () => {
+                // 恢复原始数据
+                timeLogs = timeLogs.map(l => {
+                    if (l.id === id) {
+                        return { ...l, date: originalDate, formattedDate: originalFormattedDate };
+                    }
+                    return l;
+                });
+                
+                saveLogs();
+                renderLogs();
+            };
+            
+            saveBtn.addEventListener('click', handleSave);
+            cancelBtn.addEventListener('click', handleCancel);
+            
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleSave();
+            });
+        }
+        
+        // 编辑时间记录时间段
+        function editLogPeriod(id) {
+            const log = timeLogs.find(l => l.id === id);
+            if (!log) return;
+            
+            const logItem = document.querySelector(`.log-item[data-id="${id}"]`);
+            if (!logItem) return;
+            
+            const periodElement = logItem.querySelector('.time-period');
+            const originalPeriod = log.period;
+            
+            // 标记为编辑模式
+            logItem.classList.add('editing-mode');
+            
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'edit-input';
+            input.value = log.period;
+            input.style.width = '150px';
+            
+            const editControls = document.createElement('div');
+            editControls.className = 'edit-controls';
+            editControls.style.marginTop = '5px';
+            
+            const saveBtn = document.createElement('button');
+            saveBtn.className = 'save-edit-btn';
+            saveBtn.textContent = '保存';
+            saveBtn.style.padding = '5px 10px';
+            saveBtn.style.fontSize = '0.8rem';
+            
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'cancel-edit-btn';
+            cancelBtn.textContent = '取消';
+            cancelBtn.style.padding = '5px 10px';
+            cancelBtn.style.fontSize = '0.8rem';
+            
+            editControls.appendChild(saveBtn);
+            editControls.appendChild(cancelBtn);
+            
+            periodElement.innerHTML = '';
+            periodElement.appendChild(input);
+            periodElement.appendChild(editControls);
+            input.focus();
+            
+            const handleSave = () => {
+                const newPeriod = input.value.trim();
+                if (!newPeriod) {
+                    alert('时间段不能为空');
+                    return;
+                }
+                
+                timeLogs = timeLogs.map(l => {
+                    if (l.id === id) {
+                        return { ...l, period: newPeriod };
+                    }
+                    return l;
+                });
+                
+                saveLogs();
+                renderLogs();
+            };
+            
+            const handleCancel = () => {
+                // 恢复原始数据
+                timeLogs = timeLogs.map(l => {
+                    if (l.id === id) {
+                        return { ...l, period: originalPeriod };
+                    }
+                    return l;
+                });
+                
+                saveLogs();
+                renderLogs();
+            };
+            
+            saveBtn.addEventListener('click', handleSave);
+            cancelBtn.addEventListener('click', handleCancel);
+            
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleSave();
+            });
+        }
+        
+        // 编辑时间记录内容
+        function editLogContent(id) {
+            const log = timeLogs.find(l => l.id === id);
+            if (!log) return;
+            
+            const logItem = document.querySelector(`.log-item[data-id="${id}"]`);
+            if (!logItem) return;
+            
+            const contentElement = logItem.querySelector('.log-work');
+            const originalContent = log.content;
+            
+            // 标记为编辑模式
+            logItem.classList.add('editing-mode');
+            
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'edit-input';
+            input.value = log.content;
+            input.style.width = '100%';
+            
+            const editControls = document.createElement('div');
+            editControls.className = 'edit-controls';
+            editControls.style.marginTop = '5px';
+            
+            const saveBtn = document.createElement('button');
+            saveBtn.className = 'save-edit-btn';
+            saveBtn.textContent = '保存';
+            saveBtn.style.padding = '5px 10px';
+            saveBtn.style.fontSize = '0.8rem';
+            
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'cancel-edit-btn';
+            cancelBtn.textContent = '取消';
+            cancelBtn.style.padding = '5px 10px';
+            cancelBtn.style.fontSize = '0.8rem';
+            
+            editControls.appendChild(saveBtn);
+            editControls.appendChild(cancelBtn);
+            
+            contentElement.innerHTML = '';
+            contentElement.appendChild(input);
+            contentElement.appendChild(editControls);
+            input.focus();
+            input.select();
+            
+            const handleSave = () => {
+                const newContent = input.value.trim();
+                if (!newContent) {
+                    alert('工作内容不能为空');
+                    return;
+                }
+                
+                timeLogs = timeLogs.map(l => {
+                    if (l.id === id) {
+                        return { ...l, content: newContent };
+                    }
+                    return l;
+                });
+                
+                saveLogs();
+                renderLogs();
+            };
+            
+            const handleCancel = () => {
+                // 恢复原始数据
+                timeLogs = timeLogs.map(l => {
+                    if (l.id === id) {
+                        return { ...l, content: originalContent };
+                    }
+                    return l;
+                });
+                
+                saveLogs();
+                renderLogs();
+            };
+            
+            saveBtn.addEventListener('click', handleSave);
+            cancelBtn.addEventListener('click', handleCancel);
+            
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleSave();
+            });
+        }
+        
+        // 编辑时间记录详情
+        function editLogDetails(id) {
+            const log = timeLogs.find(l => l.id === id);
+            if (!log) return;
+            
+            const logItem = document.querySelector(`.log-item[data-id="${id}"]`);
+            if (!logItem) return;
+            
+            const detailsElement = logItem.querySelector('.log-details');
+            const originalDetails = log.details;
+            
+            // 标记为编辑模式
+            logItem.classList.add('editing-mode');
+            
+            const textarea = document.createElement('textarea');
+            textarea.className = 'edit-textarea';
+            textarea.value = log.details || '';
+            textarea.style.width = '100%';
+            textarea.style.minHeight = '100px';
+            
+            const editControls = document.createElement('div');
+            editControls.className = 'edit-controls';
+            editControls.style.marginTop = '10px';
+            
+            const saveBtn = document.createElement('button');
+            saveBtn.className = 'save-edit-btn';
+            saveBtn.textContent = '保存';
+            
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'cancel-edit-btn';
+            cancelBtn.textContent = '取消';
+            
+            editControls.appendChild(saveBtn);
+            editControls.appendChild(cancelBtn);
+            
+            detailsElement.innerHTML = '';
+            detailsElement.appendChild(textarea);
+            detailsElement.appendChild(editControls);
+            textarea.focus();
+            
+            const handleSave = () => {
+                const newDetails = textarea.value; // 保留换行符，不trim
+                
+                timeLogs = timeLogs.map(l => {
+                    if (l.id === id) {
+                        return { ...l, details: newDetails };
+                    }
+                    return l;
+                });
+                
+                saveLogs();
+                renderLogs();
+            };
+            
+            const handleCancel = () => {
+                // 恢复原始数据
+                timeLogs = timeLogs.map(l => {
+                    if (l.id === id) {
+                        return { ...l, details: originalDetails };
+                    }
+                    return l;
+                });
+                
+                saveLogs();
+                renderLogs();
+            };
+            
+            saveBtn.addEventListener('click', handleSave);
+            cancelBtn.addEventListener('click', handleCancel);
+        }
+        
+        // 清除所有任务
+        function clearAllTasks() {
+            if (tasks.length === 0) {
+                alert('当前没有任务可以清除');
+                return;
+            }
+            
+            if (confirm('确定要清除所有任务吗？此操作不可撤销！')) {
+                tasks = [];
+                saveTasks();
+                renderTasks();
+                alert('所有任务已清除');
+            }
+        }
+        
+        // 清除所有时间记录
+        function clearAllLogs() {
+            if (timeLogs.length === 0) {
+                alert('当前没有时间记录可以清除');
+                return;
+            }
+            
+            if (confirm('确定要清除所有时间记录吗？此操作不可撤销！')) {
+                timeLogs = [];
+                saveLogs();
+                renderLogs();
+                alert('所有时间记录已清除');
+            }
+        }
+        
+        // 获取分类名称
+        function getCategoryName(category) {
+            switch(category) {
+                case 'work': return '工作';
+                case 'life': return '生活';
+                case 'study': return '学习';
+                default: return '工作';
+            }
+        }
+        
         // 保存任务到本地存储
         function saveTasks() {
             localStorage.setItem('tasks', JSON.stringify(tasks));
@@ -696,6 +1546,7 @@
             // 准备任务数据
             const tasksData = tasks.map(task => ({
                 '任务内容': task.text,
+                '分类': getCategoryName(task.category),
                 '状态': task.completed ? '已完成' : '未完成',
                 '创建时间': new Date(task.createdAt).toLocaleString('zh-CN')
             }));
@@ -719,6 +1570,7 @@
             // 设置列宽
             const tasksColWidths = [
                 { wch: 40 }, // 任务内容
+                { wch: 10 }, // 分类
                 { wch: 15 }, // 状态
                 { wch: 25 }  // 创建时间
             ];
@@ -772,9 +1624,14 @@
                         const tasksJson = XLSX.utils.sheet_to_json(tasksSheet);
                         
                         tasksJson.forEach(item => {
+                            let category = 'work';
+                            if (item['分类'] === '生活') category = 'life';
+                            else if (item['分类'] === '学习') category = 'study';
+                            
                             const newTask = {
                                 id: Date.now() + Math.random(),
                                 text: item['任务内容'] || item['任务'] || '',
+                                category: category,
                                 completed: (item['状态'] === '已完成' || item['完成状态'] === '已完成') ? true : false,
                                 createdAt: item['创建时间'] ? new Date(item['创建时间']).toISOString() : new Date().toISOString()
                             };
@@ -840,10 +1697,10 @@
         // 添加示例数据（第一次使用时）
         if (!localStorage.getItem('hasExampleData')) {
             tasks = [
-                { id: 1, text: '完成项目需求文档', completed: true, createdAt: new Date().toISOString() },
-                { id: 2, text: '团队周会', completed: false, createdAt: new Date().toISOString() },
-                { id: 3, text: '编写代码功能模块', completed: false, createdAt: new Date().toISOString() },
-                { id: 4, text: '测试系统功能', completed: false, createdAt: new Date().toISOString() }
+                { id: 1, text: '完成项目需求文档，这是一个非常长的任务内容用于测试文本换行和布局效果', category: 'work', completed: true, createdAt: new Date().toISOString() },
+                { id: 2, text: '团队周会，讨论本周工作进展和下周计划安排', category: 'work', completed: false, createdAt: new Date().toISOString() },
+                { id: 3, text: '学习React框架，包括组件生命周期、状态管理和Hooks等高级特性', category: 'study', completed: false, createdAt: new Date().toISOString() },
+                { id: 4, text: '健身房锻炼，包括有氧运动和力量训练', category: 'life', completed: false, createdAt: new Date().toISOString() }
             ];
             
             // 添加示例时间记录（包含日期）
@@ -867,7 +1724,7 @@
                     formattedDate: formatDate(today),
                     period: '9:00-10:30', 
                     content: '完成项目需求分析', 
-                    details: '与产品经理讨论功能需求，明确项目目标',
+                    details: '与产品经理讨论功能需求\n明确项目目标\n制定开发计划',
                     createdAt: new Date().toISOString() 
                 },
                 { 
@@ -876,7 +1733,7 @@
                     formattedDate: formatDate(today),
                     period: '10:45-12:00', 
                     content: '设计数据库结构', 
-                    details: '创建ER图，定义数据表关系',
+                    details: '创建ER图\n定义数据表关系\n确定索引策略',
                     createdAt: new Date().toISOString() 
                 },
                 { 
@@ -885,7 +1742,7 @@
                     formattedDate: formatDate(yesterday),
                     period: '14:00-16:30', 
                     content: '学习新技术框架', 
-                    details: '研究Vue 3.0的新特性，编写示例代码',
+                    details: '研究Vue 3.0的新特性\n编写示例代码\n整理学习笔记',
                     createdAt: new Date().toISOString() 
                 }
             ];
