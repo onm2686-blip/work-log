@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -174,6 +175,38 @@
             cursor: pointer;
             flex-shrink: 0;
             margin-top: 2px; /* 微调垂直位置 */
+        }
+        
+        .star-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: #ccc;
+            transition: all 0.3s;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        /* 优化星标按钮悬停效果：只改变颜色，不加背景色 */
+        .star-btn:hover {
+            color: #f1c40f;
+            transform: scale(1.2);
+            background: none !important; /* 确保没有背景色 */
+        }
+        
+        .star-btn.starred {
+            color: #f1c40f;
+        }
+        
+        .star-btn.starred:hover {
+            color: #f39c12;
+            background: none !important; /* 确保没有背景色 */
         }
         
         .task-text {
@@ -373,6 +406,12 @@
             .task-checkbox {
                 width: 20px;
                 height: 20px;
+            }
+            
+            .star-btn {
+                font-size: 1.1rem;
+                width: 22px;
+                height: 22px;
             }
         }
         
@@ -596,8 +635,12 @@
         .task-left-section {
             display: flex;
             align-items: flex-start;
-            gap: 10px; /* 减小左侧元素的间距 */
+            gap: 8px; /* 减小左侧元素的间距 */
             flex-shrink: 0;
+        }
+        
+        .starred-task {
+            border-left: 4px solid #f1c40f;
         }
     </style>
 </head>
@@ -777,6 +820,7 @@
                 text: text,
                 category: selectedCategory,
                 completed: false,
+                starred: false, // 新增星标属性，默认未星标
                 createdAt: new Date().toISOString()
             };
             
@@ -839,19 +883,27 @@
             
             taskList.innerHTML = '';
             let completedCount = 0;
+            let starredCount = 0;
             
-            // 按创建时间倒序排列
-            const sortedTasks = [...tasks].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            // 按星标和创建时间排序：星标任务在前，按创建时间倒序；非星标任务在后，按创建时间倒序
+            const sortedTasks = [...tasks].sort((a, b) => {
+                // 首先按星标排序（星标在前）
+                if (a.starred && !b.starred) return -1;
+                if (!a.starred && b.starred) return 1;
+                
+                // 如果星标状态相同，按创建时间倒序
+                return new Date(b.createdAt) - new Date(a.createdAt);
+            });
             
             sortedTasks.forEach(task => {
                 const taskItem = document.createElement('div');
-                taskItem.className = 'task-item';
+                taskItem.className = `task-item ${task.starred ? 'starred-task' : ''}`;
                 taskItem.setAttribute('data-id', task.id);
                 
                 const taskContent = document.createElement('div');
                 taskContent.className = 'task-content';
                 
-                // 左侧部分：复选框和分类标签
+                // 左侧部分：复选框、星标按钮和分类标签
                 const leftSection = document.createElement('div');
                 leftSection.className = 'task-left-section';
                 
@@ -861,11 +913,20 @@
                 checkbox.checked = task.completed;
                 checkbox.addEventListener('change', () => toggleTask(task.id));
                 
+                const starBtn = document.createElement('button');
+                starBtn.className = `star-btn ${task.starred ? 'starred' : ''}`;
+                starBtn.innerHTML = task.starred ? '<i class="fas fa-star"></i>' : '<i class="far fa-star"></i>';
+                starBtn.addEventListener('click', (e) => {
+                    e.stopPropagation(); // 防止事件冒泡
+                    toggleStar(task.id);
+                });
+                
                 const categorySpan = document.createElement('span');
                 categorySpan.className = `task-category category-${task.category}`;
                 categorySpan.textContent = getCategoryName(task.category);
                 
                 leftSection.appendChild(checkbox);
+                leftSection.appendChild(starBtn);
                 leftSection.appendChild(categorySpan);
                 
                 // 任务文本部分
@@ -898,12 +959,14 @@
                 
                 // 添加双击编辑事件
                 taskItem.addEventListener('dblclick', (e) => {
-                    if (e.target !== checkbox && e.target !== deleteBtn && e.target !== deleteBtn.querySelector('i')) {
+                    if (e.target !== checkbox && e.target !== starBtn && e.target !== deleteBtn && 
+                        e.target !== deleteBtn.querySelector('i') && e.target !== starBtn.querySelector('i')) {
                         editTask(task.id);
                     }
                 });
                 
                 if (task.completed) completedCount++;
+                if (task.starred) starredCount++;
             });
         }
         
@@ -1011,6 +1074,19 @@
             tasks = tasks.map(task => {
                 if (task.id === id) {
                     return { ...task, completed: !task.completed };
+                }
+                return task;
+            });
+            
+            saveTasks();
+            renderTasks();
+        }
+        
+        // 切换任务星标状态
+        function toggleStar(id) {
+            tasks = tasks.map(task => {
+                if (task.id === id) {
+                    return { ...task, starred: !task.starred };
                 }
                 return task;
             });
@@ -1547,6 +1623,7 @@
             const tasksData = tasks.map(task => ({
                 '任务内容': task.text,
                 '分类': getCategoryName(task.category),
+                '星标': task.starred ? '是' : '否',
                 '状态': task.completed ? '已完成' : '未完成',
                 '创建时间': new Date(task.createdAt).toLocaleString('zh-CN')
             }));
@@ -1571,6 +1648,7 @@
             const tasksColWidths = [
                 { wch: 40 }, // 任务内容
                 { wch: 10 }, // 分类
+                { wch: 10 }, // 星标
                 { wch: 15 }, // 状态
                 { wch: 25 }  // 创建时间
             ];
@@ -1628,10 +1706,14 @@
                             if (item['分类'] === '生活') category = 'life';
                             else if (item['分类'] === '学习') category = 'study';
                             
+                            let starred = false;
+                            if (item['星标'] === '是') starred = true;
+                            
                             const newTask = {
                                 id: Date.now() + Math.random(),
                                 text: item['任务内容'] || item['任务'] || '',
                                 category: category,
+                                starred: starred,
                                 completed: (item['状态'] === '已完成' || item['完成状态'] === '已完成') ? true : false,
                                 createdAt: item['创建时间'] ? new Date(item['创建时间']).toISOString() : new Date().toISOString()
                             };
@@ -1697,10 +1779,10 @@
         // 添加示例数据（第一次使用时）
         if (!localStorage.getItem('hasExampleData')) {
             tasks = [
-                { id: 1, text: '完成项目需求文档，这是一个非常长的任务内容用于测试文本换行和布局效果', category: 'work', completed: true, createdAt: new Date().toISOString() },
-                { id: 2, text: '团队周会，讨论本周工作进展和下周计划安排', category: 'work', completed: false, createdAt: new Date().toISOString() },
-                { id: 3, text: '学习React框架，包括组件生命周期、状态管理和Hooks等高级特性', category: 'study', completed: false, createdAt: new Date().toISOString() },
-                { id: 4, text: '健身房锻炼，包括有氧运动和力量训练', category: 'life', completed: false, createdAt: new Date().toISOString() }
+                { id: 1, text: '完成项目需求文档，这是一个非常长的任务内容用于测试文本换行和布局效果', category: 'work', starred: true, completed: true, createdAt: new Date().toISOString() },
+                { id: 2, text: '团队周会，讨论本周工作进展和下周计划安排', category: 'work', starred: false, completed: false, createdAt: new Date().toISOString() },
+                { id: 3, text: '学习React框架，包括组件生命周期、状态管理和Hooks等高级特性', category: 'study', starred: true, completed: false, createdAt: new Date().toISOString() },
+                { id: 4, text: '健身房锻炼，包括有氧运动和力量训练', category: 'life', starred: false, completed: false, createdAt: new Date().toISOString() }
             ];
             
             // 添加示例时间记录（包含日期）
