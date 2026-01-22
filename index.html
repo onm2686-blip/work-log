@@ -123,7 +123,7 @@
             height: 80px;
             resize: vertical;
             font-family: inherit;
-            white-space: pre-wrap; /* 保留换行符 */
+            white-space: pre-wrap;
         }
         
         button {
@@ -162,10 +162,10 @@
         .task-content {
             flex: 1;
             display: flex;
-            align-items: flex-start; /* 改为顶部对齐 */
-            gap: 12px; /* 缩小间距 */
-            min-width: 0; /* 防止内容溢出 */
-            padding-right: 90px; /* 为删除按钮预留空间 */
+            align-items: flex-start;
+            gap: 12px;
+            min-width: 0;
+            padding-right: 90px;
         }
         
         .task-checkbox {
@@ -173,7 +173,7 @@
             height: 22px;
             cursor: pointer;
             flex-shrink: 0;
-            margin-top: 2px; /* 微调垂直位置 */
+            margin-top: 2px;
         }
         
         .star-btn {
@@ -192,11 +192,10 @@
             flex-shrink: 0;
         }
         
-        /* 优化星标按钮悬停效果：只改变颜色，不加背景色 */
         .star-btn:hover {
             color: #f1c40f;
             transform: scale(1.2);
-            background: none !important; /* 确保没有背景色 */
+            background: none !important;
         }
         
         .star-btn.starred {
@@ -205,7 +204,7 @@
         
         .star-btn.starred:hover {
             color: #f39c12;
-            background: none !important; /* 确保没有背景色 */
+            background: none !important;
         }
         
         .task-text {
@@ -214,7 +213,8 @@
             word-break: break-word;
             cursor: pointer;
             line-height: 1.4;
-            max-width: 100%; /* 确保不会超出容器 */
+            max-width: 100%;
+            white-space: pre-wrap;
         }
         
         .completed {
@@ -232,19 +232,18 @@
             font-size: 0.9rem;
             transition: all 0.3s;
             flex-shrink: 0;
-            width: auto; /* 改为自适应宽度 */
+            width: auto;
             height: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
-            white-space: nowrap; /* 防止文字换行 */
+            white-space: nowrap;
             position: absolute;
             right: 15px;
             top: 50%;
             transform: translateY(-50%);
         }
         
-        /* 修改悬停效果：只轻微上浮，不需要上下移动 */
         .delete-btn:hover {
             background-color: #c0392b;
             transform: translateY(calc(-50% - 2px));
@@ -259,7 +258,7 @@
             font-weight: bold;
             margin-right: 10px;
             flex-shrink: 0;
-            margin-top: 2px; /* 微调垂直位置 */
+            margin-top: 2px;
         }
         
         .category-work {
@@ -297,9 +296,9 @@
             color: #555;
             line-height: 1.5;
             word-break: break-word;
-            white-space: pre-wrap; /* 保留换行符 */
+            white-space: pre-wrap;
             flex: 1;
-            padding-right: 90px; /* 为删除按钮预留空间 */
+            padding-right: 90px;
         }
         
         .data-controls {
@@ -557,6 +556,7 @@
             resize: vertical;
             min-height: 80px;
             font-family: inherit;
+            white-space: pre-wrap;
         }
         
         .edit-select {
@@ -628,18 +628,32 @@
         
         .task-text-wrapper {
             flex: 1;
-            min-width: 0; /* 确保文本容器可以缩小 */
+            min-width: 0;
         }
         
         .task-left-section {
             display: flex;
             align-items: flex-start;
-            gap: 8px; /* 减小左侧元素的间距 */
+            gap: 8px;
             flex-shrink: 0;
         }
         
         .starred-task {
             border-left: 4px solid #f1c40f;
+        }
+        
+        .task-item.completed-task {
+            opacity: 0.8;
+            background-color: #f0f0f0;
+        }
+        
+        .input-hint {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 5px;
+            font-style: italic;
+            text-align: right;
+            padding-right: 10px;
         }
     </style>
 </head>
@@ -669,9 +683,10 @@
                 </div>
                 
                 <div class="input-area">
-                    <input type="text" id="taskInput" placeholder="输入新的任务内容...">
+                    <textarea id="taskInput" placeholder="输入新的任务内容...（按Enter换行，Ctrl+Enter提交）"></textarea>
                     <button id="addTaskBtn"><i class="fas fa-plus"></i> 添加任务</button>
                 </div>
+                <div class="input-hint">提示：使用Enter键换行，Ctrl+Enter键提交</div>
                 
                 <div id="taskList">
                     <!-- 任务列表将动态生成 -->
@@ -697,9 +712,10 @@
                 </div>
                 
                 <div class="input-area">
-                    <textarea id="logInput" placeholder="可以详细描述工作内容..."></textarea>
+                    <textarea id="logInput" placeholder="可以详细描述工作内容...（按Ctrl+Enter提交）"></textarea>
                     <button id="addLogBtn"><i class="fas fa-clock"></i> 添加记录</button>
                 </div>
+                <div class="input-hint">提示：使用Ctrl+Enter键提交时间记录</div>
                 
                 <div id="logList">
                     <!-- 时间记录将动态生成 -->
@@ -768,14 +784,24 @@
             
             // 添加任务事件
             addTaskBtn.addEventListener('click', addTask);
-            taskInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') addTask();
+            taskInput.addEventListener('keydown', (e) => {
+                // Ctrl+Enter 提交任务
+                if (e.key === 'Enter' && e.ctrlKey) {
+                    e.preventDefault(); // 防止插入多余的换行符
+                    addTask();
+                }
+                // 单独的Enter键不做处理，默认行为是换行
             });
             
             // 添加时间记录事件
             addLogBtn.addEventListener('click', addLog);
-            logInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' && e.ctrlKey) addLog();
+            logInput.addEventListener('keydown', (e) => {
+                // Ctrl+Enter 提交时间记录
+                if (e.key === 'Enter' && e.ctrlKey) {
+                    e.preventDefault(); // 防止插入多余的换行符
+                    addLog();
+                }
+                // 单独的Enter键不做处理，默认行为是换行
             });
             
             // 数据导出导入事件
@@ -816,10 +842,10 @@
             
             const newTask = {
                 id: Date.now(),
-                text: text,
+                text: taskInput.value, // 保留原始格式（包括空格和换行）
                 category: selectedCategory,
                 completed: false,
-                starred: false, // 新增星标属性，默认未星标
+                starred: false,
                 createdAt: new Date().toISOString()
             };
             
@@ -835,7 +861,7 @@
             const date = logDate.value;
             const period = timePeriod.value.trim();
             const content = workContent.value.trim();
-            const details = logInput.value; // 保留换行符，不trim
+            const details = logInput.value;
             
             if (!date || !period || !content) {
                 alert('请填写日期、时间段和工作内容');
@@ -884,19 +910,23 @@
             let completedCount = 0;
             let starredCount = 0;
             
-            // 按星标和创建时间排序：星标任务在前，按创建时间倒序；非星标任务在后，按创建时间倒序
+            // 修改排序逻辑：已完成任务自动排列到未完成任务后面
             const sortedTasks = [...tasks].sort((a, b) => {
                 // 首先按星标排序（星标在前）
                 if (a.starred && !b.starred) return -1;
                 if (!a.starred && b.starred) return 1;
                 
-                // 如果星标状态相同，按创建时间倒序
+                // 然后按完成状态排序（未完成在前，已完成在后）
+                if (a.completed && !b.completed) return 1;
+                if (!a.completed && b.completed) return -1;
+                
+                // 如果完成状态和星标状态都相同，按创建时间倒序
                 return new Date(b.createdAt) - new Date(a.createdAt);
             });
             
             sortedTasks.forEach(task => {
                 const taskItem = document.createElement('div');
-                taskItem.className = `task-item ${task.starred ? 'starred-task' : ''}`;
+                taskItem.className = `task-item ${task.starred ? 'starred-task' : ''} ${task.completed ? 'completed-task' : ''}`;
                 taskItem.setAttribute('data-id', task.id);
                 
                 const taskContent = document.createElement('div');
@@ -916,7 +946,7 @@
                 starBtn.className = `star-btn ${task.starred ? 'starred' : ''}`;
                 starBtn.innerHTML = task.starred ? '<i class="fas fa-star"></i>' : '<i class="far fa-star"></i>';
                 starBtn.addEventListener('click', (e) => {
-                    e.stopPropagation(); // 防止事件冒泡
+                    e.stopPropagation();
                     toggleStar(task.id);
                 });
                 
@@ -934,7 +964,8 @@
                 
                 const taskText = document.createElement('span');
                 taskText.className = `task-text ${task.completed ? 'completed' : ''}`;
-                taskText.textContent = task.text;
+                // 使用innerText保留换行符
+                taskText.innerText = task.text;
                 taskText.setAttribute('data-id', task.id);
                 
                 textWrapper.appendChild(taskText);
@@ -948,7 +979,7 @@
                 deleteBtn.className = 'delete-btn';
                 deleteBtn.innerHTML = '<i class="fas fa-trash"></i> 删除';
                 deleteBtn.addEventListener('click', (e) => {
-                    e.stopPropagation(); // 防止事件冒泡
+                    e.stopPropagation();
                     deleteTask(task.id);
                 });
                 
@@ -1037,7 +1068,7 @@
                 deleteBtn.className = 'delete-btn';
                 deleteBtn.innerHTML = '<i class="fas fa-trash"></i> 删除';
                 deleteBtn.addEventListener('click', (e) => {
-                    e.stopPropagation(); // 防止事件冒泡
+                    e.stopPropagation();
                     deleteLog(log.id);
                 });
                 
@@ -1060,7 +1091,6 @@
                         } else if (target.classList.contains('log-details')) {
                             editLogDetails(logId);
                         } else {
-                            // 如果点击的是其他部分，默认编辑工作内容
                             editLogContent(logId);
                         }
                     }
@@ -1127,25 +1157,18 @@
             // 标记为编辑模式
             taskItem.classList.add('editing-mode');
             
-            // 获取当前显示的内容
-            const taskText = taskItem.querySelector('.task-text');
-            const categorySpan = taskItem.querySelector('.task-category');
-            const deleteBtn = taskItem.querySelector('.delete-btn');
-            
-            // 保存原始HTML
-            const originalTaskContent = taskItem.querySelector('.task-content').innerHTML;
-            
             // 创建编辑界面
             const editContainer = document.createElement('div');
             editContainer.style.width = '100%';
             editContainer.style.padding = '10px';
             
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.className = 'edit-input';
-            input.value = task.text;
-            input.style.marginBottom = '10px';
-            input.style.width = '100%';
+            // 使用textarea代替input以支持换行
+            const textarea = document.createElement('textarea');
+            textarea.className = 'edit-textarea';
+            textarea.value = task.text;
+            textarea.style.marginBottom = '10px';
+            textarea.style.width = '100%';
+            textarea.style.minHeight = '80px';
             
             const categorySelect = document.createElement('select');
             categorySelect.className = 'edit-select';
@@ -1174,7 +1197,7 @@
             saveBtn.className = 'save-edit-btn';
             saveBtn.textContent = '保存';
             saveBtn.addEventListener('click', () => {
-                const newText = input.value.trim();
+                const newText = textarea.value.trim();
                 if (!newText) {
                     alert('任务内容不能为空');
                     return;
@@ -1182,7 +1205,7 @@
                 
                 tasks = tasks.map(t => {
                     if (t.id === id) {
-                        return { ...t, text: newText, category: categorySelect.value };
+                        return { ...t, text: textarea.value, category: categorySelect.value };
                     }
                     return t;
                 });
@@ -1210,7 +1233,7 @@
             editControls.appendChild(saveBtn);
             editControls.appendChild(cancelBtn);
             
-            editContainer.appendChild(input);
+            editContainer.appendChild(textarea);
             editContainer.appendChild(categorySelect);
             editContainer.appendChild(editControls);
             
@@ -1219,15 +1242,8 @@
             taskItem.appendChild(editContainer);
             
             // 焦点设置到输入框
-            input.focus();
-            input.select();
-            
-            // 添加键盘事件
-            input.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    saveBtn.click();
-                }
-            });
+            textarea.focus();
+            textarea.select();
         }
         
         // 编辑时间记录日期
@@ -1238,17 +1254,12 @@
             const logItem = document.querySelector(`.log-item[data-id="${id}"]`);
             if (!logItem) return;
             
-            // 保存原始数据
             const originalDate = log.date;
             const originalFormattedDate = log.formattedDate;
             
-            // 标记为编辑模式
             logItem.classList.add('editing-mode');
             
-            // 创建编辑界面
             const dateElement = logItem.querySelector('.log-date');
-            const originalHTML = dateElement.innerHTML;
-            
             const input = document.createElement('input');
             input.type = 'date';
             input.className = 'edit-input';
@@ -1287,7 +1298,6 @@
                     return;
                 }
                 
-                // 格式化新日期
                 const dateObj = new Date(newDate);
                 const formattedDate = dateObj.toLocaleDateString('zh-CN', { 
                     year: 'numeric', 
@@ -1308,7 +1318,6 @@
             };
             
             const handleCancel = () => {
-                // 恢复原始数据
                 timeLogs = timeLogs.map(l => {
                     if (l.id === id) {
                         return { ...l, date: originalDate, formattedDate: originalFormattedDate };
@@ -1339,7 +1348,6 @@
             const periodElement = logItem.querySelector('.time-period');
             const originalPeriod = log.period;
             
-            // 标记为编辑模式
             logItem.classList.add('editing-mode');
             
             const input = document.createElement('input');
@@ -1391,7 +1399,6 @@
             };
             
             const handleCancel = () => {
-                // 恢复原始数据
                 timeLogs = timeLogs.map(l => {
                     if (l.id === id) {
                         return { ...l, period: originalPeriod };
@@ -1422,7 +1429,6 @@
             const contentElement = logItem.querySelector('.log-work');
             const originalContent = log.content;
             
-            // 标记为编辑模式
             logItem.classList.add('editing-mode');
             
             const input = document.createElement('input');
@@ -1475,7 +1481,6 @@
             };
             
             const handleCancel = () => {
-                // 恢复原始数据
                 timeLogs = timeLogs.map(l => {
                     if (l.id === id) {
                         return { ...l, content: originalContent };
@@ -1506,7 +1511,6 @@
             const detailsElement = logItem.querySelector('.log-details');
             const originalDetails = log.details;
             
-            // 标记为编辑模式
             logItem.classList.add('editing-mode');
             
             const textarea = document.createElement('textarea');
@@ -1536,7 +1540,7 @@
             textarea.focus();
             
             const handleSave = () => {
-                const newDetails = textarea.value; // 保留换行符，不trim
+                const newDetails = textarea.value;
                 
                 timeLogs = timeLogs.map(l => {
                     if (l.id === id) {
@@ -1550,7 +1554,6 @@
             };
             
             const handleCancel = () => {
-                // 恢复原始数据
                 timeLogs = timeLogs.map(l => {
                     if (l.id === id) {
                         return { ...l, details: originalDetails };
@@ -1618,7 +1621,6 @@
         
         // 导出数据到Excel
         function exportToExcel() {
-            // 准备任务数据
             const tasksData = tasks.map(task => ({
                 '任务内容': task.text,
                 '分类': getCategoryName(task.category),
@@ -1627,7 +1629,6 @@
                 '创建时间': new Date(task.createdAt).toLocaleString('zh-CN')
             }));
             
-            // 准备时间记录数据
             const logsData = timeLogs.map(log => ({
                 '日期': log.date,
                 '时间段': log.period,
@@ -1636,38 +1637,33 @@
                 '记录时间': new Date(log.createdAt).toLocaleString('zh-CN')
             }));
             
-            // 创建工作簿
             const wb = XLSX.utils.book_new();
             
-            // 创建工作表
             const tasksWs = XLSX.utils.json_to_sheet(tasksData);
             const logsWs = XLSX.utils.json_to_sheet(logsData);
             
-            // 设置列宽
             const tasksColWidths = [
-                { wch: 40 }, // 任务内容
-                { wch: 10 }, // 分类
-                { wch: 10 }, // 星标
-                { wch: 15 }, // 状态
-                { wch: 25 }  // 创建时间
+                { wch: 40 },
+                { wch: 10 },
+                { wch: 10 },
+                { wch: 15 },
+                { wch: 25 }
             ];
             
             const logsColWidths = [
-                { wch: 15 }, // 日期
-                { wch: 20 }, // 时间段
-                { wch: 40 }, // 工作内容
-                { wch: 50 }, // 详细描述
-                { wch: 25 }  // 记录时间
+                { wch: 15 },
+                { wch: 20 },
+                { wch: 40 },
+                { wch: 50 },
+                { wch: 25 }
             ];
             
             tasksWs['!cols'] = tasksColWidths;
             logsWs['!cols'] = logsColWidths;
             
-            // 将工作表添加到工作簿
             XLSX.utils.book_append_sheet(wb, tasksWs, '任务列表');
             XLSX.utils.book_append_sheet(wb, logsWs, '工作时间记录');
             
-            // 生成Excel文件并下载
             const fileName = `任务与时间记录_${new Date().toISOString().split('T')[0]}.xlsx`;
             XLSX.writeFile(wb, fileName);
             
@@ -1691,11 +1687,9 @@
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
                     
-                    // 清空当前数据
                     tasks = [];
                     timeLogs = [];
                     
-                    // 解析任务数据
                     if (workbook.Sheets['任务列表']) {
                         const tasksSheet = workbook.Sheets['任务列表'];
                         const tasksJson = XLSX.utils.sheet_to_json(tasksSheet);
@@ -1720,13 +1714,11 @@
                         });
                     }
                     
-                    // 解析时间记录数据
                     if (workbook.Sheets['工作时间记录']) {
                         const logsSheet = workbook.Sheets['工作时间记录'];
                         const logsJson = XLSX.utils.sheet_to_json(logsSheet);
                         
                         logsJson.forEach(item => {
-                            // 格式化日期显示
                             let dateValue = item['日期'];
                             let formattedDate = '';
                             
@@ -1757,7 +1749,6 @@
                         });
                     }
                     
-                    // 保存并重新渲染
                     saveTasks();
                     saveLogs();
                     renderTasks();
@@ -1778,13 +1769,40 @@
         // 添加示例数据（第一次使用时）
         if (!localStorage.getItem('hasExampleData')) {
             tasks = [
-                { id: 1, text: '完成项目需求文档，这是一个非常长的任务内容用于测试文本换行和布局效果', category: 'work', starred: true, completed: true, createdAt: new Date().toISOString() },
-                { id: 2, text: '团队周会，讨论本周工作进展和下周计划安排', category: 'work', starred: false, completed: false, createdAt: new Date().toISOString() },
-                { id: 3, text: '学习React框架，包括组件生命周期、状态管理和Hooks等高级特性', category: 'study', starred: true, completed: false, createdAt: new Date().toISOString() },
-                { id: 4, text: '健身房锻炼，包括有氧运动和力量训练', category: 'life', starred: false, completed: false, createdAt: new Date().toISOString() }
+                { 
+                    id: 1, 
+                    text: '完成项目需求文档，这是一个非常长的任务内容用于测试文本换行和布局效果\n- 子任务1\n- 子任务2', 
+                    category: 'work', 
+                    starred: true, 
+                    completed: true, 
+                    createdAt: new Date().toISOString() 
+                },
+                { 
+                    id: 2, 
+                    text: '团队周会，讨论本周工作进展和下周计划安排\n时间：上午10点\n地点：会议室A', 
+                    category: 'work', 
+                    starred: false, 
+                    completed: false, 
+                    createdAt: new Date().toISOString() 
+                },
+                { 
+                    id: 3, 
+                    text: '学习React框架，包括组件生命周期、状态管理和Hooks等高级特性\n重点：掌握useEffect和useContext', 
+                    category: 'study', 
+                    starred: true, 
+                    completed: false, 
+                    createdAt: new Date().toISOString() 
+                },
+                { 
+                    id: 4, 
+                    text: '健身房锻炼，包括有氧运动和力量训练\n有氧：跑步30分钟\n力量：卧推、深蹲、硬拉', 
+                    category: 'life', 
+                    starred: false, 
+                    completed: false, 
+                    createdAt: new Date().toISOString() 
+                }
             ];
             
-            // 添加示例时间记录（包含日期）
             const today = new Date();
             const yesterday = new Date(today);
             yesterday.setDate(yesterday.getDate() - 1);
